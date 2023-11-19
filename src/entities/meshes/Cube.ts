@@ -1,16 +1,25 @@
 import { readObjFile } from "../../util/fs";
-import { multiplyMatrixVector } from "../../util/math";
+
+type Vec3DTuple = [number, number, number];
 
 export default class Cube implements Mesh {
   private _meshIndexed: TriangleVerteciesIndexes[] = [];
   private _vertecies: Point3D[] = [];
   private _position: Point3D;
   private _size: Point3D;
+  private _rotation: Rotation;
 
-  constructor(x = 0, y = 0, z = 0, xSize = 1, ySize = 1, zSize = 1) {
-    // this._mesh = generateCube(x, y, z, xSize, ySize, zSize);
-    this._position = { x, y, z };
-    this._size = { x: xSize, y: ySize, z: zSize };
+  // prettier-ignore
+  constructor(position?: Vec3DTuple, size?: Vec3DTuple, rotation?: Vec3DTuple) {
+    this._position = position 
+      ? { x: position[0], y: position[1], z: position[2] } 
+      : { x: 0, y: 0, z: 0 };
+    this._size = size 
+      ? { x: size[0], y: size[1], z: size[2] } 
+      : { x: 1, y: 1, z: 1 };
+    this._rotation = rotation
+      ? { xAxis: rotation[0], yAxis: rotation[1], zAxis: rotation[2] }
+      : { xAxis: 0, yAxis: 0, zAxis: 0 };
   }
 
   get mesh() {
@@ -25,17 +34,22 @@ export default class Cube implements Mesh {
   get size() {
     return this._size;
   }
+  get rotation() {
+    return this._rotation;
+  }
 
   async loadMesh(): Promise<void> {
     console.log("starting loading Cube mesh...");
-    const { verPos, triVerIdx } = await readObjFile("/objects/cube.obj");
+    const { verPos, triVerIdx } = await readObjFile("/objects/huge_cube.obj");
     this._vertecies = verPos;
     this._meshIndexed = triVerIdx;
     console.log("applying initial position and scale...");
+    // apply custom start position
     if (Object.values(this._position).some((pos) => pos !== 0)) {
       const { x, y, z } = this._position;
       this.move(x, y, z);
     }
+
     console.log("finished loading Cube mesh! loaded triangles:", this._meshIndexed.length);
   }
 
@@ -64,39 +78,40 @@ export default class Cube implements Mesh {
 
   /** Rotates the cube relatively, if you need to set its absolute rotation use the `setRotation` method */
   rotate(xAxis: number, yAxis: number, zAxis: number): void {
-    const rotZMatrix: mat4x4 = [
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-      [0, 0, 0, 0],
-    ];
+    const originalPosition = structuredClone(this._position);
 
-    const rotXMatrix: mat4x4 = structuredClone(rotZMatrix);
+    this.move(-this._position.x, -this._position.y, -this._position.z);
 
-    // Rotation X
-    rotXMatrix[0][0] = 1;
-    rotXMatrix[1][1] = Math.cos(xAxis);
-    rotXMatrix[1][2] = Math.sin(xAxis);
-    rotXMatrix[2][1] = -Math.sin(xAxis);
-    rotXMatrix[2][2] = Math.cos(xAxis);
-    rotXMatrix[3][3] = 1;
-
-    // Rotation Z
-    rotZMatrix[0][0] = Math.cos(zAxis);
-    rotZMatrix[0][1] = Math.sin(zAxis);
-    rotZMatrix[1][0] = -Math.sin(zAxis);
-    rotZMatrix[1][1] = Math.cos(zAxis);
-    rotZMatrix[2][2] = 1;
-    rotZMatrix[3][3] = 1;
-
-    for (let triangle of this._meshIndexed) {
-      for (let vIndex of triangle) {
-        const zRotated = multiplyMatrixVector(this._vertecies[vIndex], rotZMatrix);
-        const zxRotated = multiplyMatrixVector(zRotated, rotXMatrix);
-        this._vertecies[vIndex].x = zxRotated.x;
-        this._vertecies[vIndex].y = zxRotated.y;
-        this._vertecies[vIndex].z = zxRotated.z;
-      }
+    // Rotate X
+    const cosX = Math.cos(xAxis);
+    const sinX = Math.sin(xAxis);
+    for (const vertex of this._vertecies) {
+      const y = vertex.y * cosX - vertex.z * sinX;
+      const z = vertex.y * sinX + vertex.z * cosX;
+      vertex.y = y;
+      vertex.z = z;
     }
+
+    // Rotate Y
+    const cosY = Math.cos(yAxis);
+    const sinY = Math.sin(yAxis);
+    for (const vertex of this._vertecies) {
+      const x = vertex.x * cosY + vertex.z * sinY;
+      const z = -vertex.x * sinY + vertex.z * cosY;
+      vertex.x = x;
+      vertex.z = z;
+    }
+
+    // Rotate Z
+    const cosZ = Math.cos(zAxis);
+    const sinZ = Math.sin(zAxis);
+    for (const vertex of this._vertecies) {
+      const x = vertex.x * cosZ - vertex.y * sinZ;
+      const y = vertex.x * sinZ + vertex.y * cosZ;
+      vertex.x = x;
+      vertex.y = y;
+    }
+
+    this.move(originalPosition.x, originalPosition.y, originalPosition.z);
   }
 }

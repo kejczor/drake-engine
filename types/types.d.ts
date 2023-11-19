@@ -4,11 +4,20 @@ interface Point3D {
   z: number;
 }
 
+interface Rotation {
+  xAxis: number;
+  yAxis: number;
+  zAxis: number;
+}
+
 type TriangleVerteciesIndexes = [number, number, number];
 
 type Triangle = [Point3D, Point3D, Point3D];
 
 interface Mesh {
+  position: Point3D;
+  size: Point3D;
+  rotation: Rotation;
   vertecies: Point3D[];
   mesh: Triangle[];
   loadMesh(): Promise<void>;

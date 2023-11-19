@@ -10,8 +10,8 @@ class MyGame extends Drake.Engine {
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
-    this.cube1 = new Drake.Cube(0, 0, 2);
-    this.cube2 = new Drake.Cube(1, 3, 1, 0.2, 0.3, 0.5);
+    this.cube1 = new Drake.Cube([0, 0, 0]);
+    this.cube2 = new Drake.Cube([100, 100, 100]);
 
     this.addSceneMesh(this.cube1);
     this.addSceneMesh(this.cube2);
@@ -19,15 +19,15 @@ class MyGame extends Drake.Engine {
 
   override Start(): void {
     this.setResolution(640, 480);
-    this.cube1.scale(2, 2, 2);
+    // this.cube1.scale(2, 2, 2);
     // this.cube1.move(0.2, 0.15, -1.2);
     // this.cube2.move(-0.4, -0.2, 0.5);
-    this.clearScreen();
+    // this.clearScreen();
   }
 
   override Update(): void {
-    // this.myCube.move(0, 0, 0.6 * this.deltaTime);
-    // this.myCube.rotate(0.1 * this.deltaTime, 0, 0);
+    this.cube1.move(Math.sin(Date.now() / 1000), 0, 0);
+    this.cube2.rotate((Math.PI / 3) * this.deltaTime, 0, 0);
   }
 }
 

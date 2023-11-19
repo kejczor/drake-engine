@@ -1,7 +1,7 @@
 import IdGenerator from "./util/idGenerator";
 import { multiplyMatrixVector } from "./util/math";
 
-const FOV = 90; // deg
+const FOV = Math.PI / 2; // deg
 
 export default class Engine {
   private idGenerator = new IdGenerator();
@@ -103,7 +103,7 @@ export default class Engine {
     const fNear = 0.1;
     const fFar = 1000;
     const aspectRatio = this.canvas.height / this.canvas.width;
-    const fovRad = 1 / Math.tan(((FOV * 0.5) / 180) * Math.PI);
+    const fovRad = 1 / Math.tan(FOV / 2);
 
     this.projMatrix[0][0] = aspectRatio * fovRad;
     this.projMatrix[1][1] = fovRad;
@@ -113,30 +113,57 @@ export default class Engine {
     this.projMatrix[3][3] = 0;
   }
 
+  // Function to project 3D points to 2D screen coordinates
+  project(vertex: Point3D): Point3D {
+    const focalLength = 500; // Adjust this for perspective
+    return {
+      x: (vertex.x * focalLength) / (vertex.z + focalLength),
+      y: (vertex.y * focalLength) / (vertex.z + focalLength),
+      z: vertex.z,
+    };
+  }
+
+  // Function to draw a line between two projected 3D points
+  drawLine(from: Point3D, to: Point3D) {
+    const projectedFrom = this.project(from);
+    const projectedTo = this.project(to);
+    this.ctx.beginPath();
+    this.ctx.moveTo(projectedFrom.x, projectedFrom.y);
+    this.ctx.lineTo(projectedTo.x, projectedTo.y);
+    this.ctx.lineWidth = 2;
+
+    this.ctx.strokeStyle = "#fff";
+
+    this.ctx.stroke();
+  }
+
   private render(): void {
     for (const obj of this.sceneMeshes.values()) {
       for (const triangle of obj.mesh) {
-        const triProjected: Triangle = [
-          multiplyMatrixVector(triangle[0], this.projMatrix),
-          multiplyMatrixVector(triangle[1], this.projMatrix),
-          multiplyMatrixVector(triangle[2], this.projMatrix),
-        ];
-
-        // Scale into view
-        triProjected[0].x += 1;
-        triProjected[0].y += 1;
-        triProjected[1].x += 1;
-        triProjected[1].y += 1;
-        triProjected[2].x += 1;
-        triProjected[2].y += 1;
-        triProjected[0].x *= 0.5 * this.canvas.width;
-        triProjected[0].y *= 0.5 * this.canvas.height;
-        triProjected[1].x *= 0.5 * this.canvas.width;
-        triProjected[1].y *= 0.5 * this.canvas.height;
-        triProjected[2].x *= 0.5 * this.canvas.width;
-        triProjected[2].y *= 0.5 * this.canvas.height;
-
-        this.drawTriangle(triProjected);
+        // const triProjected: Triangle = [
+        //   multiplyMatrixVector(triangle[0], this.projMatrix),
+        //   multiplyMatrixVector(triangle[1], this.projMatrix),
+        //   multiplyMatrixVector(triangle[2], this.projMatrix),
+        // ];
+        // // Scale into view
+        // triProjected[0].x += 1;
+        // triProjected[0].y += 1;
+        // triProjected[1].x += 1;
+        // triProjected[1].y += 1;
+        // triProjected[2].x += 1;
+        // triProjected[2].y += 1;
+        // triProjected[0].x *= 0.5 * this.canvas.width;
+        // triProjected[0].y *= 0.5 * this.canvas.height;
+        // triProjected[1].x *= 0.5 * this.canvas.width;
+        // triProjected[1].y *= 0.5 * this.canvas.height;
+        // triProjected[2].x *= 0.5 * this.canvas.width;
+        // triProjected[2].y *= 0.5 * this.canvas.height;
+        // this.drawTriangle(triProjected);
+        this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+        this.drawLine(triangle[0], triangle[1]);
+        this.drawLine(triangle[1], triangle[2]);
+        this.drawLine(triangle[2], triangle[0]);
+        this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
       }
     }
   }
