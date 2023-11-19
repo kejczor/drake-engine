@@ -3,7 +3,7 @@ import { multiplyMatrixVector } from "./util/math";
 
 const FOV = 90; // deg
 
-export default class Renderer {
+export default class Engine {
   private idGenerator = new IdGenerator();
   private sceneMeshes: Map<number, Mesh> = new Map();
   private projMatrix: mat4x4 = [
@@ -31,9 +31,11 @@ export default class Renderer {
     this.ctx = ctx;
   }
 
-  // Main methods - used to interact with engine workflow directly
+  // Main methods - used to interact with engine's workflow directly
 
-  private _CoreStart(): void {
+  private async _CoreStart(): Promise<void> {
+    for (const obj of this.sceneMeshes.values()) await obj.loadMesh();
+
     this.initProjection();
   }
 
@@ -61,8 +63,8 @@ export default class Renderer {
 
   // Utility methods
 
-  run(): void {
-    this._CoreStart();
+  async run(): Promise<void> {
+    await this._CoreStart();
     this.Start();
     this._CoreUpdate(0);
   }

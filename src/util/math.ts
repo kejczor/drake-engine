@@ -13,3 +13,7 @@ export function multiplyMatrixVector(i: Point3D, m: mat4x4) {
 
   return o;
 }
+
+export function transpose<T>(m: T[][]) {
+  return m[0].map((_v, i) => m.map((item) => item[i]));
+}

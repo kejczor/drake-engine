@@ -4,10 +4,14 @@ interface Point3D {
   z: number;
 }
 
+type TriangleVerteciesIndexes = [number, number, number];
+
 type Triangle = [Point3D, Point3D, Point3D];
 
 interface Mesh {
+  vertecies: Point3D[];
   mesh: Triangle[];
+  loadMesh(): Promise<void>;
 }
 
 type mat4x4 = [
