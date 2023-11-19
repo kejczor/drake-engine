@@ -4,6 +4,4 @@ export default class Camera {
   constructor(pos: Point3D) {
     this.position = pos;
   }
-
-  move(newPos: Point3D | null) {}
 }
