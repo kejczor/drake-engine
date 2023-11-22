@@ -4,6 +4,8 @@ interface Point3D {
   z: number;
 }
 
+type Point3DTuple = [number, number, number];
+
 interface Rotation {
   xAxis: number;
   yAxis: number;
@@ -14,7 +16,7 @@ type TriangleVerteciesIndexes = [number, number, number];
 
 type Triangle = [Point3D, Point3D, Point3D];
 
-interface Mesh {
+interface GameObject {
   position: Point3D;
   size: Point3D;
   rotation: Rotation;

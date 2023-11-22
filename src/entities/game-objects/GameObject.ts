@@ -1,16 +1,18 @@
-import { readObjFile } from "../../util/fs";
+import { readObjFile } from "@/src/util/fs";
 
-type Vec3DTuple = [number, number, number];
-
-export default class Cube implements Mesh {
+export default class GameObject implements GameObject {
   private _meshIndexed: TriangleVerteciesIndexes[] = [];
   private _vertecies: Point3D[] = [];
   private _position: Point3D;
   private _size: Point3D;
   private _rotation: Rotation;
 
+  readonly meshPath: string;
+
   // prettier-ignore
-  constructor(position?: Vec3DTuple, size?: Vec3DTuple, rotation?: Vec3DTuple) {
+  constructor(meshPath: string, position?: Point3DTuple, size?: Point3DTuple, rotation?: Point3DTuple) {
+    this.meshPath = meshPath
+    
     this._position = position 
       ? { x: position[0], y: position[1], z: position[2] } 
       : { x: 0, y: 0, z: 0 };
@@ -39,8 +41,8 @@ export default class Cube implements Mesh {
   }
 
   async loadMesh(): Promise<void> {
-    console.log("starting loading Cube mesh...");
-    const { verPos, triVerIdx } = await readObjFile("/objects/huge_cube.obj");
+    console.log("starting loading mesh...");
+    const { verPos, triVerIdx } = await readObjFile(this.meshPath);
     this._vertecies = verPos;
     this._meshIndexed = triVerIdx;
     console.log("applying initial position and scale...");
@@ -50,7 +52,7 @@ export default class Cube implements Mesh {
       this.move(x, y, z);
     }
 
-    console.log("finished loading Cube mesh! loaded triangles:", this._meshIndexed.length);
+    console.log("finished loading mesh! loaded triangles:", this._meshIndexed.length);
   }
 
   /** Moves the cube relatively, if you need to move it absolutely use the `setPosition` method */

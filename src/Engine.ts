@@ -5,7 +5,7 @@ const FOV = Math.PI / 2; // deg
 
 export default class Engine {
   private idGenerator = new IdGenerator();
-  private sceneMeshes: Map<number, Mesh> = new Map();
+  private sceneMeshes: Map<number, GameObject> = new Map();
   private projMatrix: mat4x4 = [
     [0, 0, 0, 0],
     [0, 0, 0, 0],
@@ -20,6 +20,7 @@ export default class Engine {
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  private fpsDisplay: HTMLElement | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -35,6 +36,13 @@ export default class Engine {
 
   private async _CoreStart(): Promise<void> {
     for (const obj of this.sceneMeshes.values()) await obj.loadMesh();
+
+    this.fpsDisplay = document.getElementById("fps");
+    if (this.fpsDisplay) {
+      this.fpsDisplay.style.position = "fixed";
+      this.fpsDisplay.style.top = "0";
+      this.fpsDisplay.style.color = "white";
+    }
 
     this.initProjection();
   }
@@ -55,7 +63,10 @@ export default class Engine {
 
     this.Update();
 
-    requestAnimationFrame((renderTime) => this._CoreUpdate(renderTime));
+    requestAnimationFrame((renderTime) => {
+      if (this.fpsDisplay) this.fpsDisplay.textContent = "" + Math.floor(1000 / (renderTime - lastFrameEnd));
+      this._CoreUpdate(renderTime);
+    });
   }
 
   /** Gets called every frame */
@@ -81,7 +92,7 @@ export default class Engine {
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  addSceneMesh(mesh: Mesh): number {
+  addSceneMesh(mesh: GameObject): number {
     const meshId = this.idGenerator.id;
     this.sceneMeshes.set(meshId, mesh);
     return meshId;
@@ -140,30 +151,30 @@ export default class Engine {
   private render(): void {
     for (const obj of this.sceneMeshes.values()) {
       for (const triangle of obj.mesh) {
-        // const triProjected: Triangle = [
-        //   multiplyMatrixVector(triangle[0], this.projMatrix),
-        //   multiplyMatrixVector(triangle[1], this.projMatrix),
-        //   multiplyMatrixVector(triangle[2], this.projMatrix),
-        // ];
-        // // Scale into view
-        // triProjected[0].x += 1;
-        // triProjected[0].y += 1;
-        // triProjected[1].x += 1;
-        // triProjected[1].y += 1;
-        // triProjected[2].x += 1;
-        // triProjected[2].y += 1;
-        // triProjected[0].x *= 0.5 * this.canvas.width;
-        // triProjected[0].y *= 0.5 * this.canvas.height;
-        // triProjected[1].x *= 0.5 * this.canvas.width;
-        // triProjected[1].y *= 0.5 * this.canvas.height;
-        // triProjected[2].x *= 0.5 * this.canvas.width;
-        // triProjected[2].y *= 0.5 * this.canvas.height;
-        // this.drawTriangle(triProjected);
-        this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-        this.drawLine(triangle[0], triangle[1]);
-        this.drawLine(triangle[1], triangle[2]);
-        this.drawLine(triangle[2], triangle[0]);
-        this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
+        const triProjected: Triangle = [
+          multiplyMatrixVector(triangle[0], this.projMatrix),
+          multiplyMatrixVector(triangle[1], this.projMatrix),
+          multiplyMatrixVector(triangle[2], this.projMatrix),
+        ];
+        // Scale into view
+        triProjected[0].x += 1;
+        triProjected[0].y += 1;
+        triProjected[1].x += 1;
+        triProjected[1].y += 1;
+        triProjected[2].x += 1;
+        triProjected[2].y += 1;
+        triProjected[0].x *= 0.5 * this.canvas.width;
+        triProjected[0].y *= 0.5 * this.canvas.height;
+        triProjected[1].x *= 0.5 * this.canvas.width;
+        triProjected[1].y *= 0.5 * this.canvas.height;
+        triProjected[2].x *= 0.5 * this.canvas.width;
+        triProjected[2].y *= 0.5 * this.canvas.height;
+        this.drawTriangle(triProjected);
+        // this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
+        // this.drawLine(triangle[0], triangle[1]);
+        // this.drawLine(triangle[1], triangle[2]);
+        // this.drawLine(triangle[2], triangle[0]);
+        // this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
       }
     }
   }

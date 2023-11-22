@@ -1,4 +1,4 @@
-import Cube from "./entities/meshes/Cube";
+import Cube from "./entities/game-objects/built-in/Cube";
 import Drake from "./index";
 
 const canvas = document.getElementById("app") as HTMLCanvasElement | null;
@@ -10,11 +10,14 @@ class MyGame extends Drake.Engine {
 
   constructor(canvas: HTMLCanvasElement) {
     super(canvas);
-    this.cube1 = new Drake.Cube([0, 0, 0]);
-    this.cube2 = new Drake.Cube([100, 100, 100]);
+    this.cube1 = new Drake.Cube([0.3, 0, 0.5]);
+    this.cube2 = new Drake.Cube([0, 0, 0.4]);
 
     this.addSceneMesh(this.cube1);
     this.addSceneMesh(this.cube2);
+    // for (let i = 0; i < 10; i++) {
+    //   this.addSceneMesh(new Drake.Cube([0, 0, 0]));
+    // }
   }
 
   override Start(): void {
@@ -26,8 +29,8 @@ class MyGame extends Drake.Engine {
   }
 
   override Update(): void {
-    this.cube1.move(Math.sin(Date.now() / 1000), 0, 0);
-    this.cube2.rotate((Math.PI / 3) * this.deltaTime, 0, 0);
+    // this.cube1.move(Math.sin(Date.now() / 1000), 0, 0);
+    // this.cube2.rotate((Math.PI / 3) * this.deltaTime, 0, 0);
   }
 }
 

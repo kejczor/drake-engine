@@ -20,7 +20,12 @@
     "noFallthroughCasesInSwitch": true,
 
     // Additional
-    "noImplicitOverride": true
+    "noImplicitOverride": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["./*"]
+    }
   },
-  "include": ["src", "types/vite-env.d.ts", "types/types.d.ts"]
+  "include": ["src", "types/vite-env.d.ts", "types/types.d.ts"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 }
