@@ -1,46 +1,37 @@
 import { readObjFile } from "@/src/util/fs";
 
-export default class GameObject implements GameObject {
+export default class GameObject {
   private _meshIndexed: TriangleVerteciesIndexes[] = [];
-  private _vertecies: Point3D[] = [];
-  private _position: Point3D;
-  private _size: Point3D;
+  private _vertecies: Vec3D[] = [];
+  private _position: Vec3D;
+  private _size: Vec3D;
   private _rotation: Rotation;
 
   readonly meshPath: string;
 
-  // prettier-ignore
-  constructor(meshPath: string, position?: Point3DTuple, size?: Point3DTuple, rotation?: Point3DTuple) {
-    this.meshPath = meshPath
-    
-    this._position = position 
-      ? { x: position[0], y: position[1], z: position[2] } 
-      : { x: 0, y: 0, z: 0 };
-    this._size = size 
-      ? { x: size[0], y: size[1], z: size[2] } 
-      : { x: 1, y: 1, z: 1 };
-    this._rotation = rotation
-      ? { xAxis: rotation[0], yAxis: rotation[1], zAxis: rotation[2] }
-      : { xAxis: 0, yAxis: 0, zAxis: 0 };
-  }
-
   get mesh() {
     return this._meshIndexed.map((triVerIdx) => triVerIdx.map((i) => this._vertecies[i]) as Triangle);
   }
-  get vertecies() {
-    return this._vertecies;
-  }
-  get position() {
-    return this._position;
-  }
-  get size() {
-    return this._size;
-  }
-  get rotation() {
-    return this._rotation;
+  get vertecies() { return this._vertecies; } // prettier-ignore
+  get position() { return this._position; } // prettier-ignore
+  get size() { return this._size; } // prettier-ignore
+  get rotation() { return this._rotation; } // prettier-ignore
+
+  constructor(
+    meshPath: string,
+    position: Vec3DTuple = [0, 0, 0],
+    size: Vec3DTuple = [1, 1, 1],
+    rotation: Vec3DTuple = [0, 0, 0]
+  ) {
+    this.meshPath = meshPath;
+
+    this._position = { x: position[0], y: position[1], z: position[2] };
+    this._size = { x: size[0], y: size[1], z: size[2] };
+    this._rotation = { xAxis: rotation[0], yAxis: rotation[1], zAxis: rotation[2] };
   }
 
   async loadMesh(): Promise<void> {
+    const start = Date.now();
     console.log("starting loading mesh...");
     const { verPos, triVerIdx } = await readObjFile(this.meshPath);
     this._vertecies = verPos;
@@ -52,7 +43,13 @@ export default class GameObject implements GameObject {
       this.move(x, y, z);
     }
 
-    console.log("finished loading mesh! loaded triangles:", this._meshIndexed.length);
+    console.log(
+      "finished loading mesh! loaded triangles:",
+      this._meshIndexed.length,
+      "time took:",
+      Date.now() - start,
+      "ms"
+    );
   }
 
   /** Moves the cube relatively, if you need to move it absolutely use the `setPosition` method */
@@ -66,21 +63,17 @@ export default class GameObject implements GameObject {
   }
 
   scale(x: number, y: number, z: number) {
-    console.log(this.mesh);
     for (const vertex of this._vertecies) {
-      console.log("prev", vertex.x);
       vertex.x *= x;
-      console.log(vertex.x);
       vertex.y *= y;
-      // vertex.z *= z;
+      vertex.z *= z;
     }
     this._size = { x, y, z };
-    console.log(this.mesh);
   }
 
   /** Rotates the cube relatively, if you need to set its absolute rotation use the `setRotation` method */
   rotate(xAxis: number, yAxis: number, zAxis: number): void {
-    const originalPosition = structuredClone(this._position);
+    const originalPosition = { x: this._position.x, y: this._position.y, z: this._position.z };
 
     this.move(-this._position.x, -this._position.y, -this._position.z);
 

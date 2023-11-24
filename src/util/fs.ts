@@ -1,13 +1,13 @@
 import { transpose } from "./math";
 
 interface parsedObj {
-  verPos: Point3D[];
+  verPos: Vec3D[];
   triVerIdx: TriangleVerteciesIndexes[];
 }
 
 function parseObj(text: string): parsedObj {
   // because indices are base 1 let's just fill in the 0th data
-  const verPos: Point3D[] = [];
+  const verPos: Vec3D[] = [];
   const triVerIdx: TriangleVerteciesIndexes[] = [];
   // const objNormals = [];
 

@@ -1,10 +1,17 @@
-interface Point3D {
+interface Vec3D {
   x: number;
   y: number;
   z: number;
 }
 
-type Point3DTuple = [number, number, number];
+interface Vec4D {
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+}
+
+type Vec3DTuple = [number, number, number];
 
 interface Rotation {
   xAxis: number;
@@ -14,29 +21,22 @@ interface Rotation {
 
 type TriangleVerteciesIndexes = [number, number, number];
 
-type Triangle = [Point3D, Point3D, Point3D];
+type Triangle = [Vec3D, Vec3D, Vec3D];
+
+type Triangle4D = [Vec4D, Vec4D, Vec4D];
 
 interface GameObject {
-  position: Point3D;
-  size: Point3D;
+  position: Vec3D;
+  size: Vec3D;
   rotation: Rotation;
-  vertecies: Point3D[];
+  vertecies: Vec3D[];
   mesh: Triangle[];
   loadMesh(): Promise<void>;
 }
 
-type mat4x4 = [
+type Mat4x4 = [
   [number, number, number, number],
   [number, number, number, number],
   [number, number, number, number],
   [number, number, number, number]
 ];
-
-/**
- * Rotation is defined in radian scale -> π = 180°
- */
-// interface Rotation {
-//   x: number;
-//   y: number;
-//   z: number;
-// }
