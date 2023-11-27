@@ -41,6 +41,7 @@ export default class GameObject {
     if (Object.values(this._position).some((pos) => pos !== 0)) {
       const { x, y, z } = this._position;
       this.move(x, y, z);
+      this._position = { x, y, z };
     }
 
     console.log(
@@ -59,7 +60,7 @@ export default class GameObject {
       vertex.y += y;
       vertex.z += z;
     }
-    this._position = { x, y, z: this._position.z + z };
+    this._position = { x: this._position.x + x, y: this._position.y + y, z: this._position.z + z };
   }
 
   scale(x: number, y: number, z: number) {

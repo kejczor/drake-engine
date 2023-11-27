@@ -10,14 +10,16 @@ export default class Engine {
 
   private penultimateFrameEndTime: number = 0;
   private prevFrameEndTime: number = 0;
-  /** The interval in seconds from the last frame to the current one */
   private _deltaTime: number = 0;
+  private _frameNumber: number = 0;
 
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private fpsDisplay: HTMLElement | null = null;
 
+  /** The interval in seconds from the last frame to the current one */
   get deltaTime() { return this._deltaTime; } // prettier-ignore
+  get frameNumber() { return this._frameNumber; } // prettier-ignore
 
   constructor(canvas: HTMLCanvasElement, camera: Camera) {
     this.canvas = canvas;
@@ -48,23 +50,24 @@ export default class Engine {
   /** Gets called once the program starts */
   Start(): void {}
 
-  private _CoreUpdate(lastFrameEnd: number, frameId: number = 0): void {
+  private _CoreUpdate(lastFrameEnd: number, frameNumber: number = 0): void {
     // generate last rendered frame
     this.clearScreen();
-    this.render(frameId);
+    this.render();
 
     // prepare for next frame render
     this.penultimateFrameEndTime = this.prevFrameEndTime;
     this.prevFrameEndTime = lastFrameEnd;
     // divide difference by 1000 to express delta in seconds not miliseconds
     this._deltaTime = (this.prevFrameEndTime - this.penultimateFrameEndTime) / 1000;
+    this._frameNumber = frameNumber;
 
     this.Update();
 
     requestAnimationFrame((renderTime) => {
-      if (this.fpsDisplay && frameId % 10 === 0)
+      if (this.fpsDisplay && frameNumber % 10 === 0)
         this.fpsDisplay.textContent = Math.floor(1000 / (renderTime - lastFrameEnd)) + " FPS";
-      this._CoreUpdate(renderTime, ++frameId);
+      this._CoreUpdate(renderTime, ++frameNumber);
     });
   }
 
@@ -85,7 +88,7 @@ export default class Engine {
     this.initProjection();
   }
 
-  clearScreen(color = "#000"): void {
+  clearScreen(color: string = "#000"): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.fillStyle = color;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
@@ -97,10 +100,11 @@ export default class Engine {
     return meshId;
   }
 
-  drawTriangle(triangle: Triangle): void {
+  private drawTriangle(triangle: Triangle): void {
     this.ctx.beginPath();
     this.ctx.moveTo(triangle[0].x, triangle[0].y);
     this.ctx.lineTo(triangle[1].x, triangle[1].y);
+    this.ctx.moveTo(triangle[1].x, triangle[1].y);
     this.ctx.lineTo(triangle[2].x, triangle[2].y);
     this.ctx.closePath();
 
@@ -110,92 +114,44 @@ export default class Engine {
   }
 
   private initProjection(): void {
-    const near = 0.1;
-    const far = 1000;
+    const NEAR = 0.1;
+    const FAR = 1000;
+
     const aspectRatio = this.canvas.height / this.canvas.width;
 
-    Matrix.makeProjection(this.projMatrix, this.mainCamera.fov, aspectRatio, near, far);
+    Matrix.makeProjection(this.projMatrix, this.mainCamera.fov, aspectRatio, NEAR, FAR);
   }
 
-  // Function to project 3D points to 2D screen coordinates
-  project(vertex: Vec3D): Vec3D {
-    const focalLength = 1000; // Adjust this for perspective
-    return {
-      x: (vertex.x * focalLength) / (vertex.z + focalLength),
-      y: (vertex.y * focalLength) / (vertex.z + focalLength),
-      z: vertex.z,
-    };
-  }
+  private render(): void {
+    let matWorld = Matrix.makeTranslation(0, 0, 0);
 
-  // Function to draw a line between two projected 3D points
-  drawLine(from: Vec3D, to: Vec3D) {
-    const projectedFrom = this.project(from);
-    const projectedTo = this.project(to);
-    this.ctx.beginPath();
-    this.ctx.moveTo(projectedFrom.x, projectedFrom.y);
-    this.ctx.lineTo(projectedTo.x, projectedTo.y);
-    this.ctx.lineWidth = 2;
-
-    this.ctx.strokeStyle = "#fff";
-
-    this.ctx.stroke();
-  }
-
-  private render(frameId: number): void {
-    // console.log(this.deltaTime);
-    // const matRotZ = Matrix.makeRotationZ(0);
-    // const matRotX = Matrix.makeRotationX(0);
-
-    const matWorld /*matTrans*/ = Matrix.makeTranslation(0, 0, 15);
-
-    const up = { x: 0, y: 1, z: 0 };
     const targetDir = Vector.add(this.mainCamera.position, this.mainCamera.lookDir);
 
-    const matCamera = Matrix.pointAt(this.mainCamera.position, targetDir, up);
+    const matCamera = Matrix.lookAt(this.mainCamera.position, targetDir, { x: 0, y: 1, z: 0 });
     const matView = Matrix.quickInverse(matCamera);
-
-    // let matWorld = Matrix.multiplyMatrix(matRotZ, matRotX); // Transform by rotation
-    // matWorld = Matrix.multiplyMatrix(matWorld, matTrans); // Transform by translation
 
     for (const obj of this.gameObjects.values()) {
       for (const triangle of obj.mesh) {
-        const triTransformed: Triangle4D = Array(3) as Triangle4D;
-        triTransformed[0] = Matrix.multiplyVector(matWorld, { ...triangle[0], w: 1 });
-        triTransformed[1] = Matrix.multiplyVector(matWorld, { ...triangle[1], w: 1 });
-        triTransformed[2] = Matrix.multiplyVector(matWorld, { ...triangle[2], w: 1 });
+        const finalProjection: Triangle = Array(3) as Triangle;
 
-        const triViewed = Array(3);
-        triViewed[0] = Matrix.multiplyVector(matView, triTransformed[0]);
-        triViewed[1] = Matrix.multiplyVector(matView, triTransformed[1]);
-        triViewed[2] = Matrix.multiplyVector(matView, triTransformed[2]);
+        for (let i = 0; i < 3; i++) {
+          const vertexTransformed = Matrix.multiplyVector(matWorld, { ...triangle[i], w: 1 });
 
-        const triProjected: Triangle4D = Array(3) as Triangle4D;
-        triProjected[0] = Matrix.multiplyVector(this.projMatrix, triViewed[0]);
-        triProjected[1] = Matrix.multiplyVector(this.projMatrix, triViewed[1]);
-        triProjected[2] = Matrix.multiplyVector(this.projMatrix, triViewed[2]);
+          const vertexViewed = Matrix.multiplyVector(matView, vertexTransformed);
 
-        const triangleNormalized: Triangle = Array(3) as Triangle;
-        triangleNormalized[0] = Vector.divide(triProjected[0], triProjected[0].w);
-        triangleNormalized[1] = Vector.divide(triProjected[1], triProjected[1].w);
-        triangleNormalized[2] = Vector.divide(triProjected[2], triProjected[2].w);
+          const vertexProjected = Matrix.multiplyVector(this.projMatrix, vertexViewed);
 
-        // Scale into view
-        const offset = { x: 1, y: 1, z: 0 };
-        triangleNormalized[0] = Vector.add(triangleNormalized[0], offset);
-        triangleNormalized[1] = Vector.add(triangleNormalized[1], offset);
-        triangleNormalized[2] = Vector.add(triangleNormalized[2], offset);
-        triangleNormalized[0].x *= 0.5 * this.canvas.width;
-        triangleNormalized[0].y *= 0.5 * this.canvas.height;
-        triangleNormalized[1].x *= 0.5 * this.canvas.width;
-        triangleNormalized[1].y *= 0.5 * this.canvas.height;
-        triangleNormalized[2].x *= 0.5 * this.canvas.width;
-        triangleNormalized[2].y *= 0.5 * this.canvas.height;
-        this.drawTriangle(triangleNormalized);
-        // this.ctx.translate(this.canvas.width / 2, this.canvas.height / 2);
-        // this.drawLine(triTranslated[0], triTranslated[1]);
-        // this.drawLine(triTranslated[1], triTranslated[2]);
-        // this.drawLine(triTranslated[2], triTranslated[0]);
-        // this.ctx.translate(-this.canvas.width / 2, -this.canvas.height / 2);
+          const vertexNormalized = Vector.divide(vertexProjected, vertexProjected.w);
+
+          const vertexScaled = Vector.add(vertexNormalized, { x: 1, y: 1, z: 0 });
+
+          vertexScaled.x *= 0.5 * this.canvas.width;
+          vertexScaled.y *= 0.5 * this.canvas.height;
+
+          finalProjection[i] = vertexScaled;
+        }
+
+        this.drawTriangle(finalProjection);
       }
     }
   }

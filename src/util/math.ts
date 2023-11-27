@@ -23,7 +23,7 @@ export namespace Vector {
     return Math.sqrt(Vector.dotP(vec, vec));
   }
 
-  export function normalise(vec: Vec3D): Vec3D {
+  export function normalize(vec: Vec3D): Vec3D {
     const l = Vector.length(vec);
     return Vector.divide(vec, l);
   }
@@ -66,17 +66,28 @@ export namespace Matrix {
   }
 
   export function makeRotationX(angleRad: number): Mat4x4 {
-    const matrix = Matrix.zeros();
-    matrix[0][0] = 1;
-    matrix[1][1] = Math.cos(angleRad);
-    matrix[1][2] = Math.sin(angleRad);
-    matrix[2][1] = -Math.sin(angleRad);
-    matrix[2][2] = Math.cos(angleRad);
-    matrix[3][3] = 1;
-    return matrix;
+    const c = Math.cos(angleRad);
+    const s = Math.sin(angleRad);
+
+    return [
+      [1, 0, 0, 0],
+      [0, c, s, 0],
+      [0, -s, c, 0],
+      [0, 0, 0, 1],
+    ];
   }
 
   export function makeRotationY(angleRad: number): Mat4x4 {
+    const c = Math.cos(angleRad);
+    const s = Math.sin(angleRad);
+
+    return [
+      [c, 0, -s, 0],
+      [0, 1, 0, 0],
+      [s, 0, c, 0],
+      [0, 0, 0, 1],
+    ];
+
     const matrix = Matrix.zeros();
     matrix[0][0] = Math.cos(angleRad);
     matrix[0][2] = Math.sin(angleRad);
@@ -88,14 +99,15 @@ export namespace Matrix {
   }
 
   export function makeRotationZ(angleRad: number): Mat4x4 {
-    const matrix = Matrix.zeros();
-    matrix[0][0] = Math.cos(angleRad);
-    matrix[0][1] = Math.sin(angleRad);
-    matrix[1][0] = -Math.sin(angleRad);
-    matrix[1][1] = Math.cos(angleRad);
-    matrix[2][2] = 1;
-    matrix[3][3] = 1;
-    return matrix;
+    const c = Math.cos(angleRad);
+    const s = Math.sin(angleRad);
+
+    return [
+      [c, s, 0, 0],
+      [-s, c, 0, 0],
+      [0, 0, 1, 0],
+      [0, 0, 0, 1],
+    ];
   }
 
   export function makeTranslation(x: number, y: number, z: number): Mat4x4 {
@@ -127,43 +139,21 @@ export namespace Matrix {
     return matrix;
   }
 
-  export function pointAt(pos: Vec3D, target: Vec3D, up: Vec3D): Mat4x4 {
-    // Calculate new forward direction
-    let newForward = Vector.subtract(target, pos);
-    newForward = Vector.normalise(newForward);
+  export function lookAt(pos: Vec3D, target: Vec3D, up: Vec3D): Mat4x4 {
+    const zAxis = Vector.normalize(Vector.subtract(pos, target));
+    const xAxis = Vector.normalize(Vector.crossP(up, zAxis));
+    const yAxis = Vector.normalize(Vector.crossP(zAxis, xAxis));
 
-    // Calculate new Up direction
-    const a = Vector.multiply(newForward, Vector.dotP(up, newForward));
-    let newUp = Vector.subtract(up, a);
-    newUp = Vector.normalise(newUp);
-
-    // New Right direction is easy, its just cross product
-    const newRight = Vector.crossP(newUp, newForward);
-
-    // Construct Dimensioning and Translation Matrix
-    const matrix = Matrix.zeros();
-
-    matrix[0][0] = newRight.x;
-    matrix[0][1] = newRight.y;
-    matrix[0][2] = newRight.z;
-    matrix[0][3] = 0;
-    matrix[1][0] = newUp.x;
-    matrix[1][1] = newUp.y;
-    matrix[1][2] = newUp.z;
-    matrix[1][3] = 0;
-    matrix[2][0] = newForward.x;
-    matrix[2][1] = newForward.y;
-    matrix[2][2] = newForward.z;
-    matrix[2][3] = 0;
-    matrix[3][0] = pos.x;
-    matrix[3][1] = pos.y;
-    matrix[3][2] = pos.z;
-    matrix[3][3] = 1;
-    return matrix;
+    return [
+      [xAxis.x, xAxis.y, xAxis.z, 0],
+      [yAxis.x, yAxis.y, yAxis.z, 0],
+      [zAxis.x, zAxis.y, zAxis.z, 0],
+      [pos.x, pos.y, pos.z, 1],
+    ];
   }
 
   export function quickInverse(m: Mat4x4): Mat4x4 {
-    // Only for Rotation/Translation Matrices
+    // optimized only for Rotation/Translation Matrices
     const matrix = Matrix.zeros();
     matrix[0][0] = m[0][0];
     matrix[0][1] = m[1][0];
