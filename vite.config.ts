@@ -6,5 +6,5 @@ export default defineConfig({
   resolve: {
     alias: [{ find: "@", replacement: fileURLToPath(new URL("./", import.meta.url)) }],
   },
-  base: "/",
+  base: "/drake-engine/",
 });
