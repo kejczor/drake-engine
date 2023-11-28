@@ -12,7 +12,7 @@ class MyGame extends Drake.Engine {
     const camera = new Drake.Camera(90, 0.1, 1000, [10, 10, -15], [0, 0, 1]);
     super(canvas, camera);
     this.cube = new Drake.Cube([10, 10, -14]);
-    this.axis = new Drake.GameObject("/objects/axis.obj");
+    this.axis = new Drake.GameObject("objects/axis.obj");
 
     this.addSceneMesh(this.cube);
     this.addSceneMesh(this.axis);

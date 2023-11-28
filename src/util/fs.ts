@@ -41,7 +41,7 @@ function parseObj(text: string): parsedObj {
 }
 
 export async function readObjFile(path: string): Promise<parsedObj> {
-  const res = await fetch(path);
+  const res = await fetch(location.pathname + path);
   const text = await res.text();
   return parseObj(text);
 }
